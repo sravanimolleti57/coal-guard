@@ -8,7 +8,6 @@ import MineManagement from '@/components/mines/MineManagement';
 import ComplianceMatrix from '@/components/compliance/ComplianceMatrix';
 import ContractorHub from '@/components/contractors/ContractorHub';
 import ProductionMonitor from '@/components/production/ProductionMonitor';
-import DocumentVault from '@/components/documents/DocumentVault';
 import AdminDocumentDashboard from '@/components/admin/AdminDocumentDashboard';
 import GisMap from '@/components/gis/GisMap';
 import AiAssistant from '@/components/ai/AiAssistant';
@@ -16,6 +15,9 @@ import NotificationCenter from '@/components/alerts/NotificationCenter';
 import ReportGenerator from '@/components/reports/ReportGenerator';
 import AuditLogViewer from '@/components/audit/AuditLogViewer';
 import UserManager from '@/components/users/UserManager';
+import ManagerDocumentUpload from '@/components/manager/ManagerDocumentUpload';
+import ManagerReviewAnalysis from '@/components/manager/ManagerReviewAnalysis';
+import AdminAiAnalysis from '@/components/admin/AdminAiAnalysis';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
@@ -30,6 +32,12 @@ export default function Home() {
 
   const renderTabContent = () => {
     switch (activeTab) {
+      case 'manager-upload':
+        return <ManagerDocumentUpload onNavigateToReview={() => setActiveTab('manager-review')} />;
+      case 'manager-review':
+        return <ManagerReviewAnalysis />;
+      case 'admin-ai-analysis':
+        return <AdminAiAnalysis />;
       case 'dashboard':
         return <CorporateDashboard onNavigate={(tab) => setActiveTab(tab)} />;
       case 'mines':
@@ -40,8 +48,6 @@ export default function Home() {
         return <ContractorHub />;
       case 'production':
         return <ProductionMonitor />;
-      case 'documents':
-        return <DocumentVault />;
       case 'admin-documents':
         return <AdminDocumentDashboard />;
       case 'gis':

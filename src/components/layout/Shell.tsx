@@ -28,11 +28,14 @@ import {
   Lock,
   UserCheck,
   LogIn,
+  Upload,
+  FileCheck,
+  Sparkles,
 } from 'lucide-react';
 
 interface ShellProps {
   activeTab: string;
-  setActiveTab: (tab: string) => void;
+  setActiveTab?: (tab: string) => void;
   children: React.ReactNode;
 }
 
@@ -75,17 +78,19 @@ export default function Shell({ activeTab, setActiveTab, children }: ShellProps)
   };
 
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'MANAGER', 'FIELD_INSPECTOR', 'REGULATORY_AUTHORITY', 'CONTRACTOR'] },
-    { id: 'mines', label: 'Mine Operations', icon: Building2, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'MANAGER', 'REGULATORY_AUTHORITY'] },
-    { id: 'compliance', label: 'Compliance Matrix', icon: ShieldCheck, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'MANAGER', 'FIELD_INSPECTOR', 'REGULATORY_AUTHORITY', 'CONTRACTOR'] },
-    { id: 'contractors', label: 'Contractors & Workers', icon: HardHat, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'MANAGER', 'CONTRACTOR'] },
-    { id: 'production', label: 'Production Monitoring', icon: Activity, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'MANAGER', 'REGULATORY_AUTHORITY'] },
-    { id: 'documents', label: 'Document Vault & OCR', icon: FileText, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'MANAGER', 'REGULATORY_AUTHORITY', 'CONTRACTOR'] },
+    { id: 'manager-upload', label: 'Document Upload', icon: Upload, roles: ['MANAGER'] },
+    { id: 'manager-review', label: 'Review & Analysis', icon: FileCheck, roles: ['MANAGER'] },
+    { id: 'admin-ai-analysis', label: 'AI Analysis', icon: Sparkles, roles: ['SUPER_ADMIN', 'ADMIN', 'REGULATORY_AUTHORITY'] },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'FIELD_INSPECTOR', 'REGULATORY_AUTHORITY', 'CONTRACTOR'] },
+    { id: 'mines', label: 'Mine Operations', icon: Building2, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'REGULATORY_AUTHORITY'] },
+    { id: 'compliance', label: 'Compliance Matrix', icon: ShieldCheck, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'FIELD_INSPECTOR', 'REGULATORY_AUTHORITY', 'CONTRACTOR'] },
+    { id: 'contractors', label: 'Contractors & Workers', icon: HardHat, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'CONTRACTOR'] },
+    { id: 'production', label: 'Production Monitoring', icon: Activity, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'REGULATORY_AUTHORITY'] },
     { id: 'admin-documents', label: 'Admin Document Review', icon: ShieldCheck, roles: ['SUPER_ADMIN', 'ADMIN', 'REGULATORY_AUTHORITY'] },
-    { id: 'gis', label: 'GIS Mine Map', icon: MapPin, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'MANAGER', 'FIELD_INSPECTOR', 'REGULATORY_AUTHORITY'] },
-    { id: 'ai-assistant', label: 'AI Governance Copilot', icon: Bot, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'MANAGER', 'FIELD_INSPECTOR', 'REGULATORY_AUTHORITY', 'CONTRACTOR'] },
-    { id: 'alerts', label: 'Alert Center', icon: Bell, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'MANAGER', 'FIELD_INSPECTOR', 'REGULATORY_AUTHORITY', 'CONTRACTOR'] },
-    { id: 'reports', label: 'Statutory Reports', icon: FileBarChart, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'MANAGER', 'REGULATORY_AUTHORITY'] },
+    { id: 'gis', label: 'GIS Mine Map', icon: MapPin, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'FIELD_INSPECTOR', 'REGULATORY_AUTHORITY'] },
+    { id: 'ai-assistant', label: 'AI Governance Copilot', icon: Bot, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'FIELD_INSPECTOR', 'REGULATORY_AUTHORITY', 'CONTRACTOR'] },
+    { id: 'alerts', label: 'Alert Center', icon: Bell, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'FIELD_INSPECTOR', 'REGULATORY_AUTHORITY', 'CONTRACTOR'] },
+    { id: 'reports', label: 'Statutory Reports', icon: FileBarChart, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'REGULATORY_AUTHORITY'] },
     { id: 'audit', label: 'System Audit Trail', icon: History, roles: ['SUPER_ADMIN', 'ADMIN', 'REGULATORY_AUTHORITY'] },
     { id: 'users', label: 'Users & Roles', icon: UserCog, roles: ['SUPER_ADMIN', 'ADMIN'] },
   ];
@@ -117,7 +122,7 @@ export default function Shell({ activeTab, setActiveTab, children }: ShellProps)
             {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
 
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveTab('dashboard')}>
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveTab?.('dashboard')}>
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
               <Cpu className="w-6 h-6 text-slate-950 font-bold" />
             </div>
@@ -174,7 +179,7 @@ export default function Shell({ activeTab, setActiveTab, children }: ShellProps)
                         key={alt.id}
                         onClick={() => {
                           setAlertsDrawerOpen(false);
-                          setActiveTab('alerts');
+                          setActiveTab?.('alerts');
                         }}
                         className={`p-3 rounded-xl border text-xs cursor-pointer transition-all ${
                           alt.severity === 'CRITICAL'
@@ -245,7 +250,7 @@ export default function Shell({ activeTab, setActiveTab, children }: ShellProps)
                 <button
                   key={item.id}
                   onClick={() => {
-                    setActiveTab(item.id);
+                    if (setActiveTab) setActiveTab(item.id);
                     setMobileOpen(false);
                   }}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-xs transition-all ${
