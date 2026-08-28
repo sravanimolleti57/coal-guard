@@ -6,15 +6,11 @@ import Shell from '@/components/layout/Shell';
 import CorporateDashboard from '@/components/dashboard/CorporateDashboard';
 import MineManagement from '@/components/mines/MineManagement';
 import ComplianceMatrix from '@/components/compliance/ComplianceMatrix';
-import FieldInspectionApp from '@/components/inspections/FieldInspectionApp';
-import ViolationTracker from '@/components/violations/ViolationTracker';
 import ContractorHub from '@/components/contractors/ContractorHub';
 import ProductionMonitor from '@/components/production/ProductionMonitor';
-import EnvMonitor from '@/components/environment/EnvMonitor';
 import DocumentVault from '@/components/documents/DocumentVault';
 import AdminDocumentDashboard from '@/components/admin/AdminDocumentDashboard';
 import GisMap from '@/components/gis/GisMap';
-import AiRiskEngine from '@/components/ai/AiRiskEngine';
 import AiAssistant from '@/components/ai/AiAssistant';
 import NotificationCenter from '@/components/alerts/NotificationCenter';
 import ReportGenerator from '@/components/reports/ReportGenerator';
@@ -40,24 +36,16 @@ export default function Home() {
         return <MineManagement />;
       case 'compliance':
         return <ComplianceMatrix />;
-      case 'inspections':
-        return <FieldInspectionApp />;
-      case 'violations':
-        return <ViolationTracker />;
       case 'contractors':
         return <ContractorHub />;
       case 'production':
         return <ProductionMonitor />;
-      case 'environment':
-        return <EnvMonitor />;
       case 'documents':
         return <DocumentVault />;
       case 'admin-documents':
         return <AdminDocumentDashboard />;
       case 'gis':
         return <GisMap />;
-      case 'risk':
-        return <AiRiskEngine />;
       case 'ai-assistant':
         return <AiAssistant />;
       case 'alerts':

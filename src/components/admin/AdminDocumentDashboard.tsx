@@ -18,6 +18,7 @@ import {
   User,
   ArrowRight,
   Filter,
+  Mail,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -327,6 +328,23 @@ export default function AdminDocumentDashboard() {
                   </button>
                 </div>
               </div>
+
+              {/* Result Email Dispatch Banner */}
+              {docAnalysis.riskLevel && (
+                <div className="bg-emerald-950/40 border border-emerald-800/80 p-3.5 rounded-xl text-xs flex items-center justify-between text-emerald-300 shadow">
+                  <div className="flex items-center gap-2.5">
+                    <Mail className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>
+                      <strong>Result Email Dispatched:</strong> Sent to Manager (
+                      <code className="text-amber-300 font-mono font-bold">{docAnalysis.uploadedBy?.email || 'manager@coalguard.demo'}</code>) & Admin (
+                      <code className="text-amber-300 font-mono font-bold">admin@coalguard.demo</code>)
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-black px-2.5 py-0.5 bg-emerald-950 border border-emerald-700 rounded-full text-emerald-300 tracking-wider">
+                    ● EMAIL SENT
+                  </span>
+                </div>
+              )}
 
               {/* AI Summary */}
               <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">

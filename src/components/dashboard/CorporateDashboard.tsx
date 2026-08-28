@@ -14,6 +14,10 @@ import {
   FileCheck,
   Layers,
   Sparkles,
+  ClipboardList,
+  MapPin,
+  Smartphone,
+  Navigation,
 } from 'lucide-react';
 import {
   BarChart,
@@ -260,6 +264,102 @@ export default function CorporateDashboard({ onNavigate }: CorporateDashboardPro
                 />
               </PieChart>
             </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* Statutory Field Inspections & Geo-Tagged Mobile Audit Section */}
+      <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-extrabold text-base text-white flex items-center gap-2">
+              <ClipboardList className="w-5 h-5 text-amber-400" /> Statutory Field Inspections & Geo-Tagged Audit App
+            </h3>
+            <p className="text-xs text-slate-400">
+              Mobile-optimized DGMS field audit app with GPS geo-tagging (`Lat: 23.6934° N, Lng: 87.2185° E`), photo evidence & audit logs.
+            </p>
+          </div>
+          <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950 px-3 py-1 rounded-full border border-emerald-800 font-bold">
+            ● GPS GEO-TAGGING ACTIVE
+          </span>
+        </div>
+
+        {/* Inspections Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Mobile App Stepper Preview Widget */}
+          <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+            <div className="flex items-center justify-between text-xs border-b border-slate-800 pb-2">
+              <span className="font-bold text-white flex items-center gap-1.5">
+                <Smartphone className="w-4 h-4 text-amber-400" /> Field Inspector App
+              </span>
+              <span className="text-[10px] text-amber-400 font-mono font-bold">STEPPER UI</span>
+            </div>
+
+            <div className="space-y-2 text-xs">
+              <div className="p-2.5 bg-slate-900 rounded-lg border border-slate-800">
+                <div className="text-[10px] text-slate-400 font-semibold">1. Mine Pit Location</div>
+                <div className="font-bold text-white">Sonepur Bazari OCP (Bench 4)</div>
+              </div>
+
+              <div className="p-2.5 bg-slate-900 rounded-lg border border-slate-800">
+                <div className="text-[10px] text-slate-400 font-semibold">2. Statutory Checklist Item</div>
+                <div className="text-emerald-400 font-bold flex items-center justify-between">
+                  <span>Haul Road Water Sprinkling</span>
+                  <span className="text-[9px] px-1.5 py-0.2 bg-emerald-950 border border-emerald-800 rounded">PASSED</span>
+                </div>
+              </div>
+
+              <div className="p-2.5 bg-slate-900 rounded-lg border border-slate-800 space-y-1">
+                <div className="text-[10px] text-slate-400 font-semibold flex items-center justify-between">
+                  <span>3. Captured GPS Geo-Coordinates</span>
+                  <Navigation className="w-3 h-3 text-emerald-400" />
+                </div>
+                <div className="font-mono text-emerald-400 text-[11px] font-bold">
+                  Lat: 23.6934° N | Lng: 87.2185° E
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Field Inspection Audit Log Table (2-column span) */}
+          <div className="lg:col-span-2 bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2 overflow-hidden">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2 text-xs">
+              <span className="font-bold text-white uppercase tracking-wider">Recent Statutory Field Audits</span>
+              <span className="text-slate-400 text-[11px]">DGMS Field Feed</span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-slate-300">
+                <thead className="bg-slate-900 text-slate-400 font-extrabold uppercase tracking-wider text-[10px]">
+                  <tr>
+                    <th className="py-2 px-3">Audit Type</th>
+                    <th className="py-2 px-3">Mine Location</th>
+                    <th className="py-2 px-3 font-mono">GPS Geo-Tag</th>
+                    <th className="py-2 px-3">Result</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60 font-medium">
+                  <tr className="hover:bg-slate-900/50">
+                    <td className="py-2 px-3 font-bold text-white">Slope Stability Audit</td>
+                    <td className="py-2 px-3 text-slate-300">Rajrappa Opencast Pit 1</td>
+                    <td className="py-2 px-3 font-mono text-emerald-400 text-[11px]">23.693° N, 87.218° E</td>
+                    <td className="py-2 px-3"><span className="px-2 py-0.5 bg-red-950 text-red-400 border border-red-800 text-[10px] font-bold rounded">ACTION REQUIRED</span></td>
+                  </tr>
+                  <tr className="hover:bg-slate-900/50">
+                    <td className="py-2 px-3 font-bold text-white">Haulage Dust Control</td>
+                    <td className="py-2 px-3 text-slate-300">Sonepur Bazari OCP Bench 3</td>
+                    <td className="py-2 px-3 font-mono text-emerald-400 text-[11px]">23.695° N, 87.220° E</td>
+                    <td className="py-2 px-3"><span className="px-2 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] font-bold rounded">PASSED</span></td>
+                  </tr>
+                  <tr className="hover:bg-slate-900/50">
+                    <td className="py-2 px-3 font-bold text-white">HEMM Grounding Audit</td>
+                    <td className="py-2 px-3 text-slate-300">Jharia Prime Coking Seam IV</td>
+                    <td className="py-2 px-3 font-mono text-emerald-400 text-[11px]">23.689° N, 87.212° E</td>
+                    <td className="py-2 px-3"><span className="px-2 py-0.5 bg-amber-950 text-amber-400 border border-amber-800 text-[10px] font-bold rounded">MONITORING</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
