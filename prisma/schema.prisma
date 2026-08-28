@@ -1,0 +1,416 @@
+// Prisma Schema for COAL-GUARD AI Governance & Compliance Platform
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  role         String    // SUPER_ADMIN, MINE_OFFICIAL, FIELD_INSPECTOR, REGULATORY_AUTHORITY, CONTRACTOR
+  phone        String?
+  designation  String?
+  subsidiaryId String?
+  mineId       String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  subsidiary   Subsidiary? @relation(fields: [subsidiaryId], references: [id])
+  mine         Mine?       @relation(fields: [mineId], references: [id])
+
+  inspections      Inspection[]      @relation("InspectorRelation")
+  violationsAssigned Violation[]     @relation("ResponsibleUser")
+  correctiveActions CorrectiveAction[] @relation("AssignedActionUser")
+  actionTimeline   ActionTimeline[]
+  auditLogs        AuditLog[]
+}
+
+model Subsidiary {
+  id          String   @id @default(uuid())
+  name        String   // e.g. Eastern Coalfields Limited (ECL)
+  code        String   @unique // e.g. ECL, BCCL, CCL
+  description String?
+  state       String?
+  createdAt   DateTime @default(now())
+
+  users   User[]
+  regions Region[]
+  mines   Mine[]
+}
+
+model Region {
+  id           String   @id @default(uuid())
+  name         String   // e.g. Raniganj Coalfield Region
+  code         String
+  subsidiaryId String
+
+  subsidiary Subsidiary @relation(fields: [subsidiaryId], references: [id])
+  mines      Mine[]
+}
+
+model Mine {
+  id               String   @id @default(uuid())
+  name             String   // e.g. Sonepur Bazari Opencast Project
+  code             String   @unique // e.g. SBN-OCP-01
+  subsidiaryId     String
+  regionId         String?
+  state            String   // e.g. West Bengal, Jharkhand
+  district         String   // e.g. Paschim Bardhaman, Dhanbad
+  latitude         Float
+  longitude        Float
+  mineType         String   // OPENCAST, UNDERGROUND, MIXED
+  status           String   @default("OPERATIONAL") // OPERATIONAL, UNDER_MAINTENANCE, TEMPORARILY_CLOSED
+  productionTarget Float    // Annual Million Tonnes (MT)
+  contactName      String?
+  contactEmail     String?
+  createdAt        DateTime @default(now())
+
+  subsidiary Subsidiary @relation(fields: [subsidiaryId], references: [id])
+  region     Region?    @relation(fields: [regionId], references: [id])
+
+  users                 User[]
+  zones                 MineZone[]
+  compliances           MineCompliance[]
+  inspections           Inspection[]
+  violations            Violation[]
+  contracts             Contract[]
+  workers               Worker[]
+  attendances           Attendance[]
+  productionRecords     ProductionRecord[]
+  environmentalReadings EnvironmentalReading[]
+  documents             Document[]
+  riskScores            RiskScore[]
+  alerts                Alert[]
+}
+
+model MineZone {
+  id        String   @id @default(uuid())
+  mineId    String
+  name      String   // e.g. Zone A - Extraction Pit 3
+  code      String   // e.g. ZA-P3
+  latitude  Float
+  longitude Float
+  riskLevel String   @default("LOW") // LOW, MEDIUM, HIGH, CRITICAL
+
+  mine Mine @relation(fields: [mineId], references: [id], onDelete: Cascade)
+
+  inspections           Inspection[]
+  violations            Violation[]
+  environmentalReadings EnvironmentalReading[]
+}
+
+model ComplianceCategory {
+  id          String   @id @default(uuid())
+  name        String   // Safety, Environment, Production, Labour, Regulatory, Equipment
+  code        String   @unique
+  description String?
+
+  requirements ComplianceRequirement[]
+  violations   Violation[]
+}
+
+model ComplianceRequirement {
+  id          String   @id @default(uuid())
+  title       String   // e.g. Quarterly Slope Stability Audit under DGMS
+  code        String   @unique // e.g. COMP-DGMS-001
+  categoryId  String
+  frequency   String   // DAILY, WEEKLY, MONTHLY, QUARTERLY, ANNUALLY
+  riskLevel   String   // LOW, MEDIUM, HIGH, CRITICAL
+  description String
+
+  category ComplianceCategory @relation(fields: [categoryId], references: [id])
+
+  mineCompliances MineCompliance[]
+  documents       Document[]
+}
+
+model MineCompliance {
+  id                String    @id @default(uuid())
+  mineId            String
+  requirementId     String
+  status            String    @default("DUE_SOON") // COMPLIANT, DUE_SOON, OVERDUE, UNDER_REVIEW, EXEMPT
+  dueDate           DateTime
+  completionDate    DateTime?
+  responsiblePerson String
+  evidenceUrl       String?
+  remarks           String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  mine        Mine                  @relation(fields: [mineId], references: [id], onDelete: Cascade)
+  requirement ComplianceRequirement @relation(fields: [requirementId], references: [id])
+}
+
+model Inspection {
+  id             String    @id @default(uuid())
+  mineId         String
+  zoneId         String?
+  inspectorId    String
+  type           String    // Safety, Environmental, Equipment, Labour, Production, Regulatory
+  scheduledDate  DateTime
+  actualDate     DateTime?
+  status         String    @default("SCHEDULED") // SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED
+  latitude       Float?
+  longitude      Float?
+  overallResult  String?   // PASSED, PASSED_WITH_OBSERVATIONS, ACTION_REQUIRED, CRITICAL_HALT
+  summary        String?
+  createdAt      DateTime  @default(now())
+
+  mine      Mine      @relation(fields: [mineId], references: [id], onDelete: Cascade)
+  zone      MineZone? @relation(fields: [zoneId], references: [id])
+  inspector User      @relation("InspectorRelation", fields: [inspectorId], references: [id])
+
+  checklists   InspectionChecklist[]
+  observations Observation[]
+  violations   Violation[]
+}
+
+model InspectionChecklist {
+  id           String  @id @default(uuid())
+  inspectionId String
+  category     String
+  itemText     String
+  status       String  // PASSED, FAILED, NOT_APPLICABLE
+  observation  String?
+
+  inspection Inspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+}
+
+model Observation {
+  id           String   @id @default(uuid())
+  inspectionId String
+  description  String
+  severity     String   // LOW, MEDIUM, HIGH, CRITICAL
+  photoUrl     String?
+  latitude     Float?
+  longitude    Float?
+  timestamp    DateTime @default(now())
+
+  inspection Inspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+}
+
+model Violation {
+  id                  String    @id @default(uuid())
+  violationNumber     String    @unique // e.g. VIOL-2026-0891
+  mineId              String
+  zoneId              String?
+  inspectionId        String?
+  categoryId          String
+  description         String
+  severity            String    // LOW, MEDIUM, HIGH, CRITICAL
+  status              String    @default("OPEN") // OPEN, ASSIGNED, IN_PROGRESS, AWAITING_VERIFICATION, CLOSED, ESCALATED
+  responsiblePersonId String?
+  dueDate             DateTime
+  closureDate         DateTime?
+  evidenceUrl         String?
+  createdAt           DateTime  @default(now())
+
+  mine              Mine                @relation(fields: [mineId], references: [id], onDelete: Cascade)
+  zone              MineZone?           @relation(fields: [zoneId], references: [id])
+  inspection        Inspection?         @relation(fields: [inspectionId], references: [id])
+  category          ComplianceCategory  @relation(fields: [categoryId], references: [id])
+  responsiblePerson User?               @relation("ResponsibleUser", fields: [responsiblePersonId], references: [id])
+
+  correctiveActions CorrectiveAction[]
+}
+
+model CorrectiveAction {
+  id              String    @id @default(uuid())
+  violationId     String
+  title           String
+  description     String
+  assignedToId    String?
+  deadline        DateTime
+  status          String    @default("ASSIGNED") // ASSIGNED, IN_PROGRESS, PENDING_REVIEW, VERIFIED_CLOSED, ESCALATED
+  evidenceUrl     String?
+  verifiedAt      DateTime?
+  verifiedById    String?
+  escalationLevel Int       @default(0) // 0: Normal, 1: Manager, 2: Corporate, 3: Critical DGMS Notice
+
+  violation  Violation @relation(fields: [violationId], references: [id], onDelete: Cascade)
+  assignedTo User?     @relation("AssignedActionUser", fields: [assignedToId], references: [id])
+
+  timelines ActionTimeline[]
+}
+
+model ActionTimeline {
+  id                 String   @id @default(uuid())
+  correctiveActionId String
+  status             String
+  note               String
+  performedById      String?
+  timestamp          DateTime @default(now())
+
+  correctiveAction CorrectiveAction @relation(fields: [correctiveActionId], references: [id], onDelete: Cascade)
+  performedBy      User?            @relation(fields: [performedById], references: [id])
+}
+
+model Contractor {
+  id                 String   @id @default(uuid())
+  companyName        String   // e.g. Bharat Excavators & Haulage Ltd
+  registrationNumber String   @unique // e.g. REG-CONTRACT-8812
+  contactPerson      String
+  email              String
+  phone              String
+  workerCount        Int      @default(0)
+  status             String   @default("ACTIVE") // ACTIVE, SUSPENDED, UNDER_REVIEW, BLACKLISTED
+  riskScore          Float    @default(15.0) // 0 - 100
+  complianceScore    Float    @default(92.0) // 0 - 100
+  createdAt          DateTime @default(now())
+
+  contracts   Contract[]
+  workers     Worker[]
+  attendances Attendance[]
+}
+
+model Contract {
+  id             String   @id @default(uuid())
+  contractorId   String
+  mineId         String
+  title          String   // e.g. Coal Overburden Removal Contract 2026
+  contractNumber String   @unique
+  startDate      DateTime
+  endDate        DateTime
+  status         String   @default("ACTIVE") // ACTIVE, EXPIRING_SOON, EXPIRED, TERMINATED
+  value          Float    // In INR Lakhs
+
+  contractor Contractor @relation(fields: [contractorId], references: [id])
+  mine       Mine       @relation(fields: [mineId], references: [id])
+}
+
+model Worker {
+  id           String   @id @default(uuid())
+  contractorId String
+  mineId       String
+  name         String
+  workerCode   String   @unique
+  role         String   // Heavy Equipment Operator, Safety Supervisor, Blasting Technician, General Miner
+  status       String   @default("ACTIVE")
+
+  contractor Contractor @relation(fields: [contractorId], references: [id])
+  mine       Mine       @relation(fields: [mineId], references: [id])
+
+  attendances Attendance[]
+}
+
+model Attendance {
+  id           String    @id @default(uuid())
+  workerId     String
+  mineId       String
+  contractorId String
+  date         DateTime
+  shift        String    // SHIFT_A_MORNING, SHIFT_B_EVENING, SHIFT_C_NIGHT
+  status       String    // PRESENT, ABSENT, ON_LEAVE
+  checkIn      DateTime?
+  checkOut     DateTime?
+
+  worker     Worker     @relation(fields: [workerId], references: [id])
+  mine       Mine       @relation(fields: [mineId], references: [id])
+  contractor Contractor @relation(fields: [contractorId], references: [id])
+}
+
+model ProductionRecord {
+  id             String   @id @default(uuid())
+  mineId         String
+  date           DateTime
+  targetSeam     String   // e.g. Seam IV - Raniganj High Grade
+  targetTonnage  Float
+  actualTonnage  Float
+  dispatchTonnage Float
+  downtimeHours  Float    @default(0.0)
+  downtimeReason String?
+
+  mine Mine @relation(fields: [mineId], references: [id], onDelete: Cascade)
+}
+
+model EnvironmentalReading {
+  id                 String   @id @default(uuid())
+  mineId             String
+  zoneId             String?
+  timestamp          DateTime @default(now())
+  pm25               Float    // Air PM2.5 (ug/m3)
+  pm10               Float    // Air PM10 (ug/m3)
+  airQualityStatus   String   // NORMAL, WARNING, CRITICAL
+  waterPh            Float    // Water pH level (6.5 - 8.5 normal)
+  waterTurbidity     Float    // NTU
+  waterQualityStatus String   // NORMAL, WARNING, CRITICAL
+  noiseLevelDb       Float    // Noise in dB
+  noiseStatus        String   // NORMAL, WARNING, CRITICAL
+  dustLevel          Float    // mg/m3
+  status             String   @default("NORMAL") // NORMAL, WARNING, CRITICAL
+
+  mine Mine      @relation(fields: [mineId], references: [id], onDelete: Cascade)
+  zone MineZone? @relation(fields: [zoneId], references: [id])
+}
+
+model Document {
+  id                       String    @id @default(uuid())
+  title                    String
+  docType                  String    // LICENSE, CERTIFICATE, INSPECTION_REPORT, REGULATORY_NOTICE, SAFETY_AUDIT
+  docNumber                String
+  mineId                   String
+  complianceRequirementId String?
+  fileUrl                  String
+  issueDate                DateTime
+  expiryDate               DateTime?
+  ocrExtractedData         String?   // JSON formatted extracted text/fields
+  status                   String    @default("ACTIVE") // ACTIVE, EXPIRING_SOON, EXPIRED, SUPERSEDED
+  createdAt                DateTime  @default(now())
+
+  mine                  Mine                   @relation(fields: [mineId], references: [id], onDelete: Cascade)
+  complianceRequirement ComplianceRequirement? @relation(fields: [complianceRequirementId], references: [id])
+}
+
+model RiskScore {
+  id               String   @id @default(uuid())
+  mineId           String
+  calculatedAt     DateTime @default(now())
+  overallScore     Float    // 0 to 100
+  riskLevel        String   // LOW, MEDIUM, HIGH, CRITICAL
+  complianceFactor Float
+  violationFactor  Float
+  actionFactor     Float
+  contractorFactor Float
+  envFactor        Float
+  detailsJson      String?
+
+  mine Mine @relation(fields: [mineId], references: [id], onDelete: Cascade)
+}
+
+model Alert {
+  id         String   @id @default(uuid())
+  mineId     String?
+  title      String
+  message    String
+  alertType  String   // COMPLIANCE, CRITICAL_VIOLATION, ENVIRONMENTAL, CONTRACTOR_RISK, EXPIRY
+  severity   String   // INFO, WARNING, CRITICAL
+  status     String   @default("UNREAD") // UNREAD, READ, DISMISSED
+  createdAt  DateTime @default(now())
+  entityType String?
+  entityId   String?
+
+  mine Mine? @relation(fields: [mineId], references: [id], onDelete: SetNull)
+}
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  userId        String?
+  userName      String
+  role          String
+  action        String   // CREATE, UPDATE, DELETE, ESCALATE, OCR_SCAN, LOGIN
+  module        String   // AUTH, MINES, COMPLIANCE, INSPECTION, VIOLATION, CONTRACTOR, PRODUCTION, ENV, DOCS
+  recordId      String?
+  previousValue String?
+  newValue      String?
+  timestamp     DateTime @default(now())
+  ipAddress     String?
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
