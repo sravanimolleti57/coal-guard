@@ -84,15 +84,11 @@ export default function Shell({ activeTab, setActiveTab, children }: ShellProps)
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'FIELD_INSPECTOR', 'REGULATORY_AUTHORITY', 'CONTRACTOR'] },
     { id: 'mines', label: 'Mine Operations', icon: Building2, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'REGULATORY_AUTHORITY'] },
     { id: 'compliance', label: 'Compliance Matrix', icon: ShieldCheck, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'FIELD_INSPECTOR', 'REGULATORY_AUTHORITY', 'CONTRACTOR'] },
-    { id: 'contractors', label: 'Contractors & Workers', icon: HardHat, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'CONTRACTOR'] },
     { id: 'production', label: 'Production Monitoring', icon: Activity, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'REGULATORY_AUTHORITY'] },
-    { id: 'admin-documents', label: 'Admin Document Review', icon: ShieldCheck, roles: ['SUPER_ADMIN', 'ADMIN', 'REGULATORY_AUTHORITY'] },
     { id: 'gis', label: 'GIS Mine Map', icon: MapPin, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'FIELD_INSPECTOR', 'REGULATORY_AUTHORITY'] },
     { id: 'ai-assistant', label: 'AI Governance Copilot', icon: Bot, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'FIELD_INSPECTOR', 'REGULATORY_AUTHORITY', 'CONTRACTOR'] },
     { id: 'alerts', label: 'Alert Center', icon: Bell, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'FIELD_INSPECTOR', 'REGULATORY_AUTHORITY', 'CONTRACTOR'] },
     { id: 'reports', label: 'Statutory Reports', icon: FileBarChart, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'REGULATORY_AUTHORITY'] },
-    { id: 'audit', label: 'System Audit Trail', icon: History, roles: ['SUPER_ADMIN', 'ADMIN', 'REGULATORY_AUTHORITY'] },
-    { id: 'users', label: 'Users & Roles', icon: UserCog, roles: ['SUPER_ADMIN', 'ADMIN'] },
   ];
 
   const filteredNav = navItems.filter((item) => user && item.roles.includes(user.role));

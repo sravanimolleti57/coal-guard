@@ -23,6 +23,7 @@ import {
   Mail,
   CheckSquare,
   XSquare,
+  Download,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -93,6 +94,215 @@ export default function ManagerReviewAnalysis() {
     } finally {
       setLoadingAnalysis(false);
     }
+  };
+
+  // Helper to download report as PDF
+  const handleDownloadPdf = (doc: any, analysis: any) => {
+    if (!doc || !analysis) return;
+
+    const sensor = getSensorReadings(doc, analysis);
+    const actions = getExtractedActions(analysis, doc);
+    const precautions = analysis.precautions || [];
+    const findingsFailed = analysis.findings?.failed || [];
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Please allow popups to download the PDF report.');
+      return;
+    }
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Coal Guard Statutory Report - ${doc.title || doc.name}</title>
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #fff; color: #1e293b; margin: 0; padding: 25px; line-height: 1.5; }
+            .header { border-bottom: 3px solid #f59e0b; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+            .title { font-size: 20px; font-weight: 900; color: #0f172a; margin: 0; text-transform: uppercase; }
+            .subtitle { font-size: 11px; color: #64748b; font-weight: 700; margin-top: 4px; }
+            .badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+            .badge-good { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+            .badge-critical { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+            .badge-medium { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+            .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; }
+            .meta-label { font-size: 9px; text-transform: uppercase; font-weight: 800; color: #64748b; }
+            .meta-val { font-size: 12px; font-weight: 700; color: #0f172a; margin-top: 2px; }
+            .section-title { font-size: 13px; font-weight: 800; text-transform: uppercase; color: #0f172a; margin-top: 22px; margin-bottom: 10px; border-left: 4px solid #f59e0b; padding-left: 8px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 11px; }
+            th { background: #0f172a; color: #fff; padding: 8px; text-align: left; text-transform: uppercase; font-size: 9px; }
+            td { padding: 8px; border-bottom: 1px solid #e2e8f0; }
+            .evidence-box { background: #fffbeb; border: 1px solid #fde68a; padding: 8px; border-radius: 6px; font-family: monospace; font-size: 10px; color: #92400e; margin-top: 4px; }
+            .footer { margin-top: 35px; border-top: 1px solid #e2e8f0; padding-top: 15px; display: flex; justify-content: space-between; font-size: 10px; color: #64748b; }
+            @media print {
+              body { padding: 0; }
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <h1 class="title">COAL GUARD AI — STATUTORY REPORT EXTRACTOR</h1>
+              <div class="subtitle">Official Statutory Document Risk Analysis & Extracted Telemetry Report</div>
+            </div>
+            <div>
+              <span class="badge ${analysis.riskLevel === 'GOOD' ? 'badge-good' : analysis.riskLevel === 'MEDIUM' ? 'badge-medium' : 'badge-critical'}">
+                ${analysis.riskLevel || 'ANALYZED'} RISK (${analysis.riskScore || 0}/100)
+              </span>
+            </div>
+          </div>
+
+          <div class="grid">
+            <div>
+              <div class="meta-label">Document Title</div>
+              <div class="meta-val">${doc.title || doc.name}</div>
+            </div>
+            <div>
+              <div class="meta-label">Document ID</div>
+              <div class="meta-val">${doc.id}</div>
+            </div>
+            <div>
+              <div class="meta-label">Target Mine Site</div>
+              <div class="meta-val">${doc.mine?.name || 'Coal Mine Site'}</div>
+            </div>
+            <div>
+              <div class="meta-label">Uploading Manager</div>
+              <div class="meta-val">${doc.uploadedBy?.name || 'Mine Manager'}</div>
+            </div>
+          </div>
+
+          <div class="section-title">1. Executive Risk Summary & Decision</div>
+          <div style="background: #f1f5f9; padding: 12px; border-radius: 8px; font-size: 11px; margin-bottom: 15px;">
+            <strong>AI Recommendation:</strong> <span style="color: #b45309; font-weight: 800;">${analysis.aiRecommendation || 'PROCEED'}</span><br/>
+            <strong>Executive Summary:</strong> ${analysis.aiSummary || 'Document analyzed under Coal India statutory safety compliance guidelines.'}
+          </div>
+
+          <div class="section-title">2. Extracted Environmental Sensor Readings</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th style="text-align: right;">Extracted Reading</th>
+                <th style="text-align: center;">Statutory Limit</th>
+                <th style="text-align: center;">Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>PM2.5 Respirable Dust</td>
+                <td style="text-align: right; font-weight: bold;">${sensor.pm25} µg/m³</td>
+                <td style="text-align: center;">60 µg/m³</td>
+                <td style="text-align: center;"><span class="badge ${sensor.pm25 > 60 ? 'badge-critical' : 'badge-good'}">${sensor.pm25 > 60 ? 'HIGH' : 'GOOD'}</span></td>
+              </tr>
+              <tr>
+                <td>PM10 Air Quality</td>
+                <td style="text-align: right; font-weight: bold;">${sensor.pm10} µg/m³</td>
+                <td style="text-align: center;">100 µg/m³</td>
+                <td style="text-align: center;"><span class="badge ${sensor.pm10 > 100 ? 'badge-critical' : 'badge-good'}">${sensor.pm10 > 100 ? 'CRITICAL' : 'GOOD'}</span></td>
+              </tr>
+              <tr>
+                <td>Water pH Level</td>
+                <td style="text-align: right; font-weight: bold;">${sensor.waterPh} pH</td>
+                <td style="text-align: center;">6.5 - 8.5 pH</td>
+                <td style="text-align: center;"><span class="badge ${sensor.waterPh < 6.5 || sensor.waterPh > 8.5 ? 'badge-critical' : 'badge-good'}">${sensor.waterPh < 6.5 || sensor.waterPh > 8.5 ? 'ACIDIC' : 'GOOD'}</span></td>
+              </tr>
+              <tr>
+                <td>Noise dB Level</td>
+                <td style="text-align: right; font-weight: bold;">${sensor.noiseLevelDb} dB</td>
+                <td style="text-align: center;">85 dB</td>
+                <td style="text-align: center;"><span class="badge ${sensor.noiseLevelDb > 85 ? 'badge-critical' : 'badge-good'}">${sensor.noiseLevelDb > 85 ? 'HIGH' : 'GOOD'}</span></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="section-title">3. Compliance Findings & Document Evidence</div>
+          ${
+            findingsFailed.length > 0
+              ? findingsFailed
+                  .map(
+                    (f: any) => `
+              <div style="margin-bottom: 8px; padding: 8px; border: 1px solid #fee2e2; background: #fff5f5; border-radius: 6px;">
+                <strong style="color: #991b1b;">[${f.severity || 'CRITICAL'}] ${f.requirement?.title || f.requirement || 'Safety Rule'}</strong>
+                <div style="font-size: 11px; margin-top: 2px;">${f.finding}</div>
+                ${f.evidence ? `<div class="evidence-box"><strong>Evidence:</strong> ${f.evidence}</div>` : ''}
+              </div>
+            `
+                  )
+                  .join('')
+              : '<div style="font-size: 11px; color: #166534;">All statutory safety requirements verified and passed.</div>'
+          }
+
+          <div class="section-title">4. Further Actions & Corrective Action Plan</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Action</th>
+                <th>Reason / Evidence</th>
+                <th>Priority</th>
+                <th>Responsible</th>
+                <th>Due Date</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${
+                actions.length > 0
+                  ? actions
+                      .map(
+                        (a: any) => `
+                <tr>
+                  <td><strong>${a.action}</strong></td>
+                  <td>${a.reason}</td>
+                  <td><span class="badge ${a.priority === 'CRITICAL' ? 'badge-critical' : 'badge-medium'}">${a.priority}</span></td>
+                  <td>${a.responsiblePerson}</td>
+                  <td>${a.dueDate}</td>
+                  <td>${a.status || 'OPEN'}</td>
+                </tr>
+              `
+                      )
+                      .join('')
+                  : '<tr><td colSpan="6">Routine monitoring active. No corrective actions required.</td></tr>'
+              }
+            </tbody>
+          </table>
+
+          <div class="section-title">5. Recommended Precautions</div>
+          <ul>
+            ${precautions.map((p: any) => `<li>${p.description || p}</li>`).join('')}
+          </ul>
+
+          <div class="footer">
+            <div>Report Generated At: ${new Date().toLocaleString('en-IN')}</div>
+            <div>Coal Guard AI Statutory Verification Seal • ID: ${doc.id}</div>
+          </div>
+
+          <script>
+            window.onload = function() {
+              window.print();
+            }
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.open();
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+  };
+
+  // Helper to extract actions array
+  const getExtractedActions = (analysis: any, doc: any) => {
+    let raw = analysis?.ocrExtractedData || doc?.ocrExtractedData;
+    if (typeof raw === 'string') {
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed.generatedActions) return parsed.generatedActions;
+      } catch (e) {}
+    } else if (typeof raw === 'object' && raw !== null && raw.generatedActions) {
+      return raw.generatedActions;
+    }
+    return [];
   };
 
   // Helper to extract or parse environmental sensor values from doc or analysis
@@ -323,12 +533,18 @@ export default function ManagerReviewAnalysis() {
 
               {/* 1. Document Information Card */}
               <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-3">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                   <h3 className="font-black text-sm text-white flex items-center gap-2">
                     <FileText className="w-4 h-4 text-amber-400" /> Document Information
                   </h3>
-                  {getStatusBadge(selectedDoc.status)}
-                </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleDownloadPdf(selectedDoc, docAnalysis)}
+                      className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl shadow flex items-center gap-1.5 transition-all"
+                    >
+                      <Download className="w-3.5 h-3.5" /> Download Report (PDF)
+                    </button>
+                    {getStatusBadge(selectedDoc.status)}
+                  </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                   <div>
@@ -380,6 +596,12 @@ export default function ManagerReviewAnalysis() {
                     </div>
 
                     <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleDownloadPdf(selectedDoc, docAnalysis)}
+                        className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl shadow flex items-center gap-1.5 transition-all"
+                      >
+                        <Download className="w-4 h-4" /> Download Report (PDF)
+                      </button>
                       <button
                         onClick={() => setAckMessage('Analysis result marked as Acknowledged & Reviewed by Manager.')}
                         className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition-all shadow"
@@ -513,6 +735,13 @@ export default function ManagerReviewAnalysis() {
 
                     {/* Further Action Buttons */}
                     <div className="pt-2 flex flex-wrap items-center gap-3">
+                      <button
+                        onClick={() => handleDownloadPdf(selectedDoc, docAnalysis)}
+                        className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl shadow flex items-center gap-2 transition-all"
+                      >
+                        <Download className="w-4 h-4" /> Download Report (PDF)
+                      </button>
+
                       <button
                         onClick={handleRequestReanalysis}
                         className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 text-slate-950 font-black text-xs rounded-xl shadow flex items-center gap-2"
