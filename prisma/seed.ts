@@ -10,6 +10,9 @@ async function main() {
   const passwordHash = await bcrypt.hash('CoalGuard@2026', 10);
 
   // 1. Clean existing records
+  await prisma.precaution.deleteMany();
+  await prisma.riskFinding.deleteMany();
+  await prisma.requirement.deleteMany();
   await prisma.auditLog.deleteMany();
   await prisma.alert.deleteMany();
   await prisma.riskScore.deleteMany();
@@ -234,7 +237,31 @@ async function main() {
     data: { mineId: mine3.id, name: 'Underground Face 3B', code: 'JHA-F3B', latitude: 23.7480, longitude: 86.4160, riskLevel: 'HIGH' }
   });
 
-  // 6. Create Users across all 5 Roles
+  // 6. Create Users across all Roles
+  const demoAdmin = await prisma.user.create({
+    data: {
+      email: 'admin@coalguard.demo',
+      passwordHash,
+      name: 'Coal Guard System Admin',
+      role: 'ADMIN',
+      designation: 'Senior Mining Safety Administrator',
+      phone: '+91 98000 00001'
+    }
+  });
+
+  const demoManager = await prisma.user.create({
+    data: {
+      email: 'manager@coalguard.demo',
+      passwordHash,
+      name: 'Coal Guard Mine Manager',
+      role: 'MANAGER',
+      designation: 'General Mine Manager',
+      subsidiaryId: ecl.id,
+      mineId: mine1.id,
+      phone: '+91 98000 00002'
+    }
+  });
+
   const adminUser = await prisma.user.create({
     data: {
       email: 'admin@coalguard.gov.in',
@@ -346,8 +373,68 @@ async function main() {
       categoryId: catLabour.id,
       frequency: 'MONTHLY',
       riskLevel: 'MEDIUM',
-      description: 'Cross-verification of contractor biometric check-ins against Form D attendance registers.'
+      description: 'Audit of contractor worker biometric attendance records and statutory Form D registers.'
     }
+  });
+
+  // 7b. Seed Structured Coal Guard AI Safety Requirements
+  await prisma.requirement.createMany({
+    data: [
+      {
+        reqId: 'REQ-EMERGENCY-EXIT',
+        category: 'Emergency Response',
+        title: 'Emergency Evacuation & Exit Response Plan',
+        description: 'Mandatory emergency response procedures, evacuation routes, assembly points, and rescue team protocols under CMR 2017.',
+        severity: 'HIGH',
+        expectedCondition: 'Emergency evacuation plan and designated assembly points must be explicitly included.',
+        active: true,
+      },
+      {
+        reqId: 'REQ-SLOPE-STABILITY',
+        category: 'Slope Stability',
+        title: 'Opencast Pit Highwall & Slope Stability Audit',
+        description: 'Geotechnical slope stability assessment and highwall monitoring under Coal Mines Regulations 2017 Reg 106.',
+        severity: 'CRITICAL',
+        expectedCondition: 'Slope stability safety factor (>1.3) and highwall monitoring data must be verified.',
+        active: true,
+      },
+      {
+        reqId: 'REQ-VENTILATION',
+        category: 'Ventilation',
+        title: 'Underground Airflow & Mechanical Ventilation Log',
+        description: 'Minimum airflow volume (m3/min per person) and mechanical fan operational telemetry in underground seams.',
+        severity: 'HIGH',
+        expectedCondition: 'Adequate ventilation airflow metrics and fan operational logs must be present.',
+        active: true,
+      },
+      {
+        reqId: 'REQ-FIRE-SUPPRESSION',
+        category: 'Fire Suppression',
+        title: 'Automatic Fire Suppression & Extinguisher Inspection',
+        description: 'Automatic fire suppression system status for heavy earth-moving machinery (HEMM) and conveyor belts.',
+        severity: 'CRITICAL',
+        expectedCondition: 'Fire suppression equipment status and annual inspection stamps must be present.',
+        active: true,
+      },
+      {
+        reqId: 'REQ-DUST-SUPPRESSION',
+        category: 'Environmental',
+        title: 'Wet Dust Suppression & Haul Road Water Sprinkling',
+        description: 'Operation of high-pressure mist cannons and haul road water sprinkling trucks to control PM10/PM2.5 emissions.',
+        severity: 'MEDIUM',
+        expectedCondition: 'Dust suppression machinery deployment and sprinkling schedules must be documented.',
+        active: true,
+      },
+      {
+        reqId: 'REQ-OPERATOR-SAFETY',
+        category: 'Equipment',
+        title: 'Heavy Equipment Operator Licensing & Biometric Sign-off',
+        description: 'Verification of certified operators, Form D attendance log, and pre-shift fitness sign-offs for excavators and dumpers.',
+        severity: 'HIGH',
+        expectedCondition: 'Operator certification licenses and pre-shift medical checkoffs must be verified.',
+        active: true,
+      },
+    ],
   });
 
   // 8. Create Mine Compliances

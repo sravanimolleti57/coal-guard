@@ -12,6 +12,7 @@ import ContractorHub from '@/components/contractors/ContractorHub';
 import ProductionMonitor from '@/components/production/ProductionMonitor';
 import EnvMonitor from '@/components/environment/EnvMonitor';
 import DocumentVault from '@/components/documents/DocumentVault';
+import AdminDocumentDashboard from '@/components/admin/AdminDocumentDashboard';
 import GisMap from '@/components/gis/GisMap';
 import AiRiskEngine from '@/components/ai/AiRiskEngine';
 import AiAssistant from '@/components/ai/AiAssistant';
@@ -22,6 +23,14 @@ import UserManager from '@/components/users/UserManager';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get('tab');
+      if (tab) setActiveTab(tab);
+    }
+  }, []);
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -43,6 +52,8 @@ export default function Home() {
         return <EnvMonitor />;
       case 'documents':
         return <DocumentVault />;
+      case 'admin-documents':
+        return <AdminDocumentDashboard />;
       case 'gis':
         return <GisMap />;
       case 'risk':

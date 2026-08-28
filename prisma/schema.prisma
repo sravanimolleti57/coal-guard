@@ -25,11 +25,13 @@ model User {
   subsidiary   Subsidiary? @relation(fields: [subsidiaryId], references: [id])
   mine         Mine?       @relation(fields: [mineId], references: [id])
 
-  inspections      Inspection[]      @relation("InspectorRelation")
-  violationsAssigned Violation[]     @relation("ResponsibleUser")
-  correctiveActions CorrectiveAction[] @relation("AssignedActionUser")
-  actionTimeline   ActionTimeline[]
-  auditLogs        AuditLog[]
+  inspections        Inspection[]        @relation("InspectorRelation")
+  violationsAssigned Violation[]         @relation("ResponsibleUser")
+  correctiveActions  CorrectiveAction[]  @relation("AssignedActionUser")
+  actionTimeline     ActionTimeline[]
+  auditLogs          AuditLog[]
+  uploadedDocuments  Document[]          @relation("UploadedDocuments")
+  alerts             Alert[]
 }
 
 model Subsidiary {
@@ -353,19 +355,79 @@ model EnvironmentalReading {
 model Document {
   id                       String    @id @default(uuid())
   title                    String
-  docType                  String    // LICENSE, CERTIFICATE, INSPECTION_REPORT, REGULATORY_NOTICE, SAFETY_AUDIT
-  docNumber                String
+  name                     String?
+  docType                  String    @default("LICENSE") // LICENSE, CERTIFICATE, INSPECTION_REPORT, REGULATORY_NOTICE, SAFETY_AUDIT
+  fileType                 String?
+  docNumber                String    @default("DOC-2026-0000")
   mineId                   String
   complianceRequirementId String?
   fileUrl                  String
-  issueDate                DateTime
+  description              String?
+  uploadedById             String?
+  issueDate                DateTime  @default(now())
   expiryDate               DateTime?
   ocrExtractedData         String?   // JSON formatted extracted text/fields
-  status                   String    @default("ACTIVE") // ACTIVE, EXPIRING_SOON, EXPIRED, SUPERSEDED
+
+  // Workflow State Machine Fields
+  status                   String    @default("PENDING_ADMIN_REVIEW") // PENDING_ADMIN_REVIEW, UNDER_REVIEW, AI_ANALYZING, AI_ANALYSIS_COMPLETED, RE_ANALYSIS_REQUESTED, APPROVED, REJECTED
+  analysisStatus           String    @default("PENDING_ADMIN_REVIEW") // PENDING_ADMIN_REVIEW, UNDER_REVIEW, AI_ANALYZING, AI_ANALYSIS_COMPLETED, RE_ANALYSIS_REQUESTED
+  riskLevel                String?   // GOOD, BAD, LOW, MEDIUM, HIGH, CRITICAL
+  riskScore                Float?    // 0 to 100
+  aiSummary                String?
+  aiRecommendation         String?   // PROCEED, DO_NOT_PROCEED
+  analyzedAt               DateTime?
   createdAt                DateTime  @default(now())
 
   mine                  Mine                   @relation(fields: [mineId], references: [id], onDelete: Cascade)
   complianceRequirement ComplianceRequirement? @relation(fields: [complianceRequirementId], references: [id])
+  uploadedBy            User?                  @relation("UploadedDocuments", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  riskFindings          RiskFinding[]
+  precautions           Precaution[]
+  alerts                Alert[]
+}
+
+model Requirement {
+  id                String   @id @default(uuid())
+  reqId             String   @unique
+  category          String   // Safety, Ventilation, Slope Stability, Emergency Response, Equipment, Fire Suppression
+  title             String
+  description       String
+  severity          String   // LOW, MEDIUM, HIGH, CRITICAL
+  expectedCondition String?
+  active            Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  riskFindings RiskFinding[]
+}
+
+model RiskFinding {
+  id            String   @id @default(uuid())
+  documentId    String
+  requirementId String?
+  severity      String   // LOW, MEDIUM, HIGH, CRITICAL
+  finding       String
+  passed        Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  document    Document     @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  requirement Requirement? @relation(fields: [requirementId], references: [id], onDelete: SetNull)
+
+  precautions Precaution[]
+}
+
+model Precaution {
+  id            String    @id @default(uuid())
+  documentId    String
+  riskFindingId String?
+  description   String
+  status        String    @default("Pending") // Pending, In Progress, Completed
+  createdAt     DateTime  @default(now())
+  completedAt   DateTime?
+
+  document    Document     @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  riskFinding RiskFinding? @relation(fields: [riskFindingId], references: [id], onDelete: SetNull)
 }
 
 model RiskScore {
@@ -387,16 +449,23 @@ model RiskScore {
 model Alert {
   id         String   @id @default(uuid())
   mineId     String?
+  userId     String?
+  documentId String?
   title      String
   message    String
-  alertType  String   // COMPLIANCE, CRITICAL_VIOLATION, ENVIRONMENTAL, CONTRACTOR_RISK, EXPIRY
+  alertType  String   // COMPLIANCE, CRITICAL_VIOLATION, ENVIRONMENTAL, CONTRACTOR_RISK, EXPIRY, SAFETY_ANALYSIS
+  type       String?  // SAFETY_ANALYSIS, SYSTEM, COMPLIANCE
   severity   String   // INFO, WARNING, CRITICAL
+  riskLevel  String?  // GOOD, BAD
   status     String   @default("UNREAD") // UNREAD, READ, DISMISSED
+  isRead     Boolean  @default(false)
   createdAt  DateTime @default(now())
   entityType String?
   entityId   String?
 
-  mine Mine? @relation(fields: [mineId], references: [id], onDelete: SetNull)
+  mine     Mine?     @relation(fields: [mineId], references: [id], onDelete: SetNull)
+  user     User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  document Document? @relation(fields: [documentId], references: [id], onDelete: SetNull)
 }
 
 model AuditLog {
@@ -404,7 +473,7 @@ model AuditLog {
   userId        String?
   userName      String
   role          String
-  action        String   // CREATE, UPDATE, DELETE, ESCALATE, OCR_SCAN, LOGIN
+  action        String   // CREATE, UPDATE, DELETE, ESCALATE, OCR_SCAN, LOGIN, AI_ANALYSIS
   module        String   // AUTH, MINES, COMPLIANCE, INSPECTION, VIOLATION, CONTRACTOR, PRODUCTION, ENV, DOCS
   recordId      String?
   previousValue String?

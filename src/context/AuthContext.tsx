@@ -16,9 +16,12 @@ export interface UserProfile {
 interface AuthContextType {
   user: UserProfile | null;
   token: string | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (arg1: string, arg2?: unknown) => Promise<boolean>;
   logout: () => void;
   switchDemoRole: (role: string) => Promise<void>;
+  isLoginOpen: boolean;
+  openLoginModal: () => void;
+  closeLoginModal: () => void;
   loading: boolean;
 }
 
@@ -27,29 +30,26 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Load initial user or demo user from localStorage / API
-    const storedToken = localStorage.getItem('cg_token');
-    const storedUser = localStorage.getItem('cg_user');
-
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-      setLoading(false);
-    } else {
-      // Default to Super Admin demo account on first load
-      switchDemoRole('SUPER_ADMIN');
+  const login = async (arg1: string, arg2?: unknown) => {
+    if (typeof arg2 === 'object' && arg2 !== null) {
+      const newToken = arg1;
+      const newUser = arg2 as UserProfile;
+      setToken(newToken);
+      setUser(newUser);
+      localStorage.setItem('cg_token', newToken);
+      localStorage.setItem('cg_user', JSON.stringify(newUser));
+      document.cookie = `cg_token=${newToken}; path=/; max-age=604800`;
+      return true;
     }
-  }, []);
 
-  const login = async (email: string, password: string) => {
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: arg1, password: arg2 as string }),
       });
 
       if (!res.ok) return false;
@@ -58,6 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setToken(data.token);
       localStorage.setItem('cg_token', data.token);
       localStorage.setItem('cg_user', JSON.stringify(data.user));
+      document.cookie = `cg_token=${data.token}; path=/; max-age=604800`;
       return true;
     } catch (e) {
       console.error(e);
@@ -65,18 +66,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('cg_token');
-    localStorage.removeItem('cg_user');
-  };
-
   const switchDemoRole = async (role: string) => {
     setLoading(true);
-    let email = 'admin@coalguard.gov.in';
+    let email = 'admin@coalguard.demo';
 
-    if (role === 'MINE_OFFICIAL') email = 'gm.sonepur@ecl.coalindia.in';
+    if (role === 'MANAGER' || role === 'MINE_OFFICIAL') email = 'manager@coalguard.demo';
     else if (role === 'FIELD_INSPECTOR') email = 'inspector.singh@dgms.gov.in';
     else if (role === 'REGULATORY_AUTHORITY') email = 'regulatory.cpcb@gov.in';
     else if (role === 'CONTRACTOR') email = 'contact@bharatexcavators.com';
@@ -85,8 +79,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(false);
   };
 
+  useEffect(() => {
+    const storedToken = localStorage.getItem('cg_token');
+    const storedUser = localStorage.getItem('cg_user');
+
+    if (storedToken && storedUser) {
+      setToken(storedToken);
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error(e);
+      }
+      setLoading(false);
+    } else {
+      switchDemoRole('MINE_OFFICIAL');
+    }
+  }, []);
+
+  const logout = () => {
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem('cg_token');
+    localStorage.removeItem('cg_user');
+    document.cookie = 'cg_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
+  };
+
+  const openLoginModal = () => setIsLoginOpen(true);
+  const closeLoginModal = () => setIsLoginOpen(false);
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, switchDemoRole, loading }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        login,
+        logout,
+        switchDemoRole,
+        isLoginOpen,
+        openLoginModal,
+        closeLoginModal,
+        loading,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

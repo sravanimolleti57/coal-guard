@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import LoginModal from '@/components/auth/LoginModal';
 import {
   LayoutDashboard,
   Building2,
   ShieldCheck,
   ClipboardList,
   AlertTriangle,
-  Users,
   HardHat,
   Activity,
   Wind,
@@ -24,8 +24,10 @@ import {
   ChevronDown,
   Menu,
   X,
-  Search,
   CheckCircle2,
+  Lock,
+  UserCheck,
+  LogIn,
 } from 'lucide-react';
 
 interface ShellProps {
@@ -35,7 +37,7 @@ interface ShellProps {
 }
 
 export default function Shell({ activeTab, setActiveTab, children }: ShellProps) {
-  const { user, logout, switchDemoRole } = useAuth();
+  const { user, logout, switchDemoRole, isLoginOpen, openLoginModal, closeLoginModal } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [unreadAlerts, setUnreadAlerts] = useState(3);
   const [alertsDrawerOpen, setAlertsDrawerOpen] = useState(false);
@@ -73,28 +75,31 @@ export default function Shell({ activeTab, setActiveTab, children }: ShellProps)
   };
 
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['SUPER_ADMIN', 'MINE_OFFICIAL', 'FIELD_INSPECTOR', 'REGULATORY_AUTHORITY', 'CONTRACTOR'] },
-    { id: 'mines', label: 'Mine Operations', icon: Building2, roles: ['SUPER_ADMIN', 'MINE_OFFICIAL', 'REGULATORY_AUTHORITY'] },
-    { id: 'compliance', label: 'Compliance Matrix', icon: ShieldCheck, roles: ['SUPER_ADMIN', 'MINE_OFFICIAL', 'FIELD_INSPECTOR', 'REGULATORY_AUTHORITY', 'CONTRACTOR'] },
-    { id: 'inspections', label: 'Inspections & Field UI', icon: ClipboardList, roles: ['SUPER_ADMIN', 'MINE_OFFICIAL', 'FIELD_INSPECTOR', 'REGULATORY_AUTHORITY'] },
-    { id: 'violations', label: 'Violations & CAPA', icon: AlertTriangle, roles: ['SUPER_ADMIN', 'MINE_OFFICIAL', 'FIELD_INSPECTOR', 'REGULATORY_AUTHORITY', 'CONTRACTOR'] },
-    { id: 'contractors', label: 'Contractors & Workers', icon: HardHat, roles: ['SUPER_ADMIN', 'MINE_OFFICIAL', 'CONTRACTOR'] },
-    { id: 'production', label: 'Production Monitoring', icon: Activity, roles: ['SUPER_ADMIN', 'MINE_OFFICIAL', 'REGULATORY_AUTHORITY'] },
-    { id: 'environment', label: 'Environmental Sensors', icon: Wind, roles: ['SUPER_ADMIN', 'MINE_OFFICIAL', 'FIELD_INSPECTOR', 'REGULATORY_AUTHORITY'] },
-    { id: 'documents', label: 'Document Vault & OCR', icon: FileText, roles: ['SUPER_ADMIN', 'MINE_OFFICIAL', 'REGULATORY_AUTHORITY', 'CONTRACTOR'] },
-    { id: 'gis', label: 'GIS Mine Map', icon: MapPin, roles: ['SUPER_ADMIN', 'MINE_OFFICIAL', 'FIELD_INSPECTOR', 'REGULATORY_AUTHORITY'] },
-    { id: 'risk', label: 'AI Risk Engine', icon: Cpu, roles: ['SUPER_ADMIN', 'MINE_OFFICIAL', 'REGULATORY_AUTHORITY'] },
-    { id: 'ai-assistant', label: 'AI Governance Copilot', icon: Bot, roles: ['SUPER_ADMIN', 'MINE_OFFICIAL', 'FIELD_INSPECTOR', 'REGULATORY_AUTHORITY', 'CONTRACTOR'] },
-    { id: 'alerts', label: 'Alert Center', icon: Bell, roles: ['SUPER_ADMIN', 'MINE_OFFICIAL', 'FIELD_INSPECTOR', 'REGULATORY_AUTHORITY', 'CONTRACTOR'] },
-    { id: 'reports', label: 'Statutory Reports', icon: FileBarChart, roles: ['SUPER_ADMIN', 'MINE_OFFICIAL', 'REGULATORY_AUTHORITY'] },
-    { id: 'audit', label: 'System Audit Trail', icon: History, roles: ['SUPER_ADMIN', 'REGULATORY_AUTHORITY'] },
-    { id: 'users', label: 'Users & Roles', icon: UserCog, roles: ['SUPER_ADMIN'] },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'MANAGER', 'FIELD_INSPECTOR', 'REGULATORY_AUTHORITY', 'CONTRACTOR'] },
+    { id: 'mines', label: 'Mine Operations', icon: Building2, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'MANAGER', 'REGULATORY_AUTHORITY'] },
+    { id: 'compliance', label: 'Compliance Matrix', icon: ShieldCheck, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'MANAGER', 'FIELD_INSPECTOR', 'REGULATORY_AUTHORITY', 'CONTRACTOR'] },
+    { id: 'inspections', label: 'Inspections & Field UI', icon: ClipboardList, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'MANAGER', 'FIELD_INSPECTOR', 'REGULATORY_AUTHORITY'] },
+    { id: 'violations', label: 'Violations & CAPA', icon: AlertTriangle, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'MANAGER', 'FIELD_INSPECTOR', 'REGULATORY_AUTHORITY', 'CONTRACTOR'] },
+    { id: 'contractors', label: 'Contractors & Workers', icon: HardHat, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'MANAGER', 'CONTRACTOR'] },
+    { id: 'production', label: 'Production Monitoring', icon: Activity, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'MANAGER', 'REGULATORY_AUTHORITY'] },
+    { id: 'environment', label: 'Environmental Sensors', icon: Wind, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'MANAGER', 'FIELD_INSPECTOR', 'REGULATORY_AUTHORITY'] },
+    { id: 'documents', label: 'Document Vault & OCR', icon: FileText, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'MANAGER', 'REGULATORY_AUTHORITY', 'CONTRACTOR'] },
+    { id: 'admin-documents', label: 'Admin Document Review', icon: ShieldCheck, roles: ['SUPER_ADMIN', 'ADMIN', 'REGULATORY_AUTHORITY'] },
+    { id: 'gis', label: 'GIS Mine Map', icon: MapPin, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'MANAGER', 'FIELD_INSPECTOR', 'REGULATORY_AUTHORITY'] },
+    { id: 'risk', label: 'AI Risk Engine', icon: Cpu, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'MANAGER', 'REGULATORY_AUTHORITY'] },
+    { id: 'ai-assistant', label: 'AI Governance Copilot', icon: Bot, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'MANAGER', 'FIELD_INSPECTOR', 'REGULATORY_AUTHORITY', 'CONTRACTOR'] },
+    { id: 'alerts', label: 'Alert Center', icon: Bell, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'MANAGER', 'FIELD_INSPECTOR', 'REGULATORY_AUTHORITY', 'CONTRACTOR'] },
+    { id: 'reports', label: 'Statutory Reports', icon: FileBarChart, roles: ['SUPER_ADMIN', 'ADMIN', 'MINE_OFFICIAL', 'MANAGER', 'REGULATORY_AUTHORITY'] },
+    { id: 'audit', label: 'System Audit Trail', icon: History, roles: ['SUPER_ADMIN', 'ADMIN', 'REGULATORY_AUTHORITY'] },
+    { id: 'users', label: 'Users & Roles', icon: UserCog, roles: ['SUPER_ADMIN', 'ADMIN'] },
   ];
 
   const filteredNav = navItems.filter((item) => user && item.roles.includes(user.role));
 
   const roleColors: Record<string, string> = {
+    ADMIN: 'bg-emerald-950/80 text-emerald-400 border-emerald-800',
     SUPER_ADMIN: 'bg-emerald-950/80 text-emerald-400 border-emerald-800',
+    MANAGER: 'bg-blue-950/80 text-blue-400 border-blue-800',
     MINE_OFFICIAL: 'bg-blue-950/80 text-blue-400 border-blue-800',
     FIELD_INSPECTOR: 'bg-amber-950/80 text-amber-400 border-amber-800',
     REGULATORY_AUTHORITY: 'bg-purple-950/80 text-purple-400 border-purple-800',
@@ -103,6 +108,9 @@ export default function Shell({ activeTab, setActiveTab, children }: ShellProps)
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+      {/* Login Modal */}
+      <LoginModal isOpen={isLoginOpen} onClose={closeLoginModal} />
+
       {/* Top Header */}
       <header className="h-16 bg-slate-900 border-b border-slate-800 px-4 md:px-6 flex items-center justify-between sticky top-0 z-40 shadow-lg">
         <div className="flex items-center gap-3">
@@ -126,31 +134,8 @@ export default function Shell({ activeTab, setActiveTab, children }: ShellProps)
           </div>
         </div>
 
-        {/* Global Demo Switcher & Controls */}
+        {/* Global Role Controls & User Actions */}
         <div className="flex items-center gap-3 md:gap-4">
-          {/* Quick Demo Switcher */}
-          <div className="hidden sm:flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
-            <span className="text-slate-400 font-semibold px-2">Role:</span>
-            {[
-              { role: 'SUPER_ADMIN', label: 'Admin' },
-              { role: 'MINE_OFFICIAL', label: 'Mine GM' },
-              { role: 'FIELD_INSPECTOR', label: 'Inspector' },
-              { role: 'REGULATORY_AUTHORITY', label: 'CPCB' },
-              { role: 'CONTRACTOR', label: 'Contractor' },
-            ].map((r) => (
-              <button
-                key={r.role}
-                onClick={() => switchDemoRole(r.role)}
-                className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
-                  user?.role === r.role
-                    ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20'
-                    : 'text-slate-300 hover:bg-slate-800'
-                }`}
-              >
-                {r.label}
-              </button>
-            ))}
-          </div>
 
           {/* Notifications Drawer Bell */}
           <div className="relative">
@@ -216,11 +201,13 @@ export default function Shell({ activeTab, setActiveTab, children }: ShellProps)
             )}
           </div>
 
-          {/* User Profile info */}
+          {/* Active User Profile Info & Logout */}
           {user && (
             <div className="flex items-center gap-3 pl-2 border-l border-slate-800">
               <div className="hidden lg:block text-right">
-                <div className="font-semibold text-xs text-white">{user.name}</div>
+                <div className="font-semibold text-xs text-white flex items-center justify-end gap-1">
+                  <UserCheck className="w-3.5 h-3.5 text-emerald-400" /> {user.name}
+                </div>
                 <div className="text-[10px] text-slate-400">{user.designation || user.email}</div>
               </div>
               <span
@@ -230,6 +217,13 @@ export default function Shell({ activeTab, setActiveTab, children }: ShellProps)
               >
                 {user.role.replace('_', ' ')}
               </span>
+              <button
+                onClick={logout}
+                className="p-2 text-slate-400 hover:text-red-400 rounded-xl hover:bg-slate-800 border border-transparent hover:border-slate-800 transition-all"
+                title="Sign Out / Lock Session"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
             </div>
           )}
         </div>
@@ -276,7 +270,7 @@ export default function Shell({ activeTab, setActiveTab, children }: ShellProps)
             <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-[10px] text-slate-400 flex items-center justify-between">
               <div>
                 <span className="font-semibold text-slate-200 block">Coal India DGMS Matrix</span>
-                <span className="text-emerald-400">● Systems Operational</span>
+                <span className="text-emerald-400">● Auth Token Active</span>
               </div>
               <button onClick={logout} className="p-1.5 text-slate-400 hover:text-red-400 rounded-lg hover:bg-slate-800" title="Logout">
                 <LogOut className="w-4 h-4" />

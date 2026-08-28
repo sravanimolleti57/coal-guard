@@ -249,7 +249,7 @@ export default function CorporateDashboard({ onNavigate }: CorporateDashboardPro
                   paddingAngle={5}
                   dataKey="count"
                   nameKey="category"
-                  label={({ category, count }) => `${category}: ${count}`}
+                  label={({ name, value }: any) => `${name}: ${value}`}
                 >
                   {charts.violationsByCategory.map((entry: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
